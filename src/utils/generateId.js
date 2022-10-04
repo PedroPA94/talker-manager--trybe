@@ -4,13 +4,11 @@ const path = require('path');
 const pathToTalkersFile = path.resolve(__dirname, '..', 'talker.json');
 
 const generateId = async (value) => {
-  const talkers = JSON.parse(await fs.readFile(pathToTalkersFile));
+  const talkers = value ? [] : JSON.parse(await fs.readFile(pathToTalkersFile)); // evita novas leituras na recursão
 
-  const numberOfTalkers = talkers.length;
+  let newId = (value || talkers.length) + 1;
 
-  let newId = (value || numberOfTalkers) + 1;
-
-  if (talkers.some(({ id }) => id === newId)) {
+  if (talkers.some(({ id }) => id === newId)) { // para garantir id inexistente
     newId = generateId(newId);
   }
 

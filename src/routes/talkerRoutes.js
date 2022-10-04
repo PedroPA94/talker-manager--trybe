@@ -1,45 +1,33 @@
 const express = require('express');
-const fs = require('fs').promises;
-const path = require('path');
 const auth = require('../middlewares/auth');
 const validateAge = require('../middlewares/validateAge');
 const validateName = require('../middlewares/validateName');
 const validateRate = require('../middlewares/validateRate');
 const validateTalk = require('../middlewares/validateTalk');
 const validateWatchedAt = require('../middlewares/validateWatchedAt');
-const generateId = require('../utils/generateId');
+const { readTalkersFile, addNewTalker, queryTalkers,
+        getTalkerById, updateTalker, deleteTalker } = require('../utils/fsUtils');
 
 const router = express.Router();
 
-const pathToTalkersFile = path.resolve(__dirname, '..', 'talker.json');
-
 router.get('/search', auth, async (req, res) => {
   const { q: query } = req.query;
-  
-  const talkers = JSON.parse(await fs.readFile(pathToTalkersFile));
-
-  if (!query) return res.status(200).json(talkers);
-
-  const filteredTalkers = talkers.filter(({ name }) => name.includes(query));
-
-  res.status(200).json(filteredTalkers);
+  const queryResults = await queryTalkers(query);
+  res.status(200).json(queryResults);
 });
 
 router.get('/', async (_req, res) => {
-  const talkers = JSON.parse(await fs.readFile(pathToTalkersFile));
+  const talkers = await readTalkersFile();
   res.status(200).json(talkers);
 });
 
 router.get('/:id', async (req, res) => {
   const { id } = req.params;
-  const talkers = JSON.parse(await fs.readFile(pathToTalkersFile));
-  const talkerIndex = talkers.findIndex((talker) => talker.id === Number(id));
+  const talkerById = await getTalkerById(Number(id));
 
-  if (talkerIndex >= 0) {
-    return res.status(200).json(talkers[talkerIndex]);
-  }
-
-  res.status(404).json({ message: 'Pessoa palestrante não encontrada' });
+  return talkerById
+  ? res.status(200).json(talkerById)
+  : res.status(404).json({ message: 'Pessoa palestrante não encontrada' });
 });
 
 router.post('/',
@@ -51,14 +39,8 @@ router.post('/',
   validateRate,
   async (req, res) => {
     const newTalker = req.body;
-    const talkers = JSON.parse(await fs.readFile(pathToTalkersFile));
-    
-    const newId = await generateId();
-
-    talkers.push({ ...newTalker, id: newId });
-    await fs.writeFile(pathToTalkersFile, JSON.stringify(talkers));
-
-    res.status(201).json({ ...newTalker, id: newId });
+    const id = await addNewTalker(newTalker);
+    res.status(201).json({ ...newTalker, id });
 });
 
 router.put('/:id',
@@ -71,29 +53,13 @@ router.put('/:id',
   async (req, res) => {
     const { id } = req.params;
     const talkerToUpdate = req.body;
-
-    const oldTalkers = JSON.parse(await fs.readFile(pathToTalkersFile));
-
-    const filteredTalkers = oldTalkers.filter((talker) => talker.id !== Number(id));
-    const updatedTalkers = JSON.stringify([
-      ...filteredTalkers,
-      { ...talkerToUpdate, id: Number(id) },
-    ]);
-
-    await fs.writeFile(pathToTalkersFile, updatedTalkers);
-
+    await updateTalker(talkerToUpdate, Number(id));
     res.status(200).json({ ...talkerToUpdate, id: Number(id) });
 });
 
 router.delete('/:id', auth, async (req, res) => {
     const { id } = req.params;
-
-    const oldTalkers = JSON.parse(await fs.readFile(pathToTalkersFile));
-
-    const filteredTalkers = oldTalkers.filter((talker) => talker.id !== Number(id));
-
-    await fs.writeFile(pathToTalkersFile, JSON.stringify(filteredTalkers));
-
+    await deleteTalker(Number(id));
     res.status(204).end();
 });
 
