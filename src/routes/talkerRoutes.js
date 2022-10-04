@@ -13,6 +13,18 @@ const router = express.Router();
 
 const pathToTalkersFile = path.resolve(__dirname, '..', 'talker.json');
 
+router.get('/search', auth, async (req, res) => {
+  const { q: query } = req.query;
+  
+  const talkers = JSON.parse(await fs.readFile(pathToTalkersFile));
+
+  if (!query) return res.status(200).json(talkers);
+
+  const filteredTalkers = talkers.filter(({ name }) => name.includes(query));
+
+  res.status(200).json(filteredTalkers);
+});
+
 router.get('/', async (_req, res) => {
   const talkers = JSON.parse(await fs.readFile(pathToTalkersFile));
   res.status(200).json(talkers);
