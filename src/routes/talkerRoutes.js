@@ -73,4 +73,16 @@ router.put('/:id',
     res.status(200).json({ ...talkerToUpdate, id: Number(id) });
 });
 
+router.delete('/:id', auth, async (req, res) => {
+    const { id } = req.params;
+
+    const oldTalkers = JSON.parse(await fs.readFile(pathToTalkersFile));
+
+    const filteredTalkers = oldTalkers.filter((talker) => talker.id !== Number(id));
+
+    await fs.writeFile(pathToTalkersFile, JSON.stringify(filteredTalkers));
+
+    res.status(204).end();
+});
+
 module.exports = router;
