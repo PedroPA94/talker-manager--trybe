@@ -1,6 +1,13 @@
 const express = require('express');
 const fs = require('fs').promises;
 const path = require('path');
+const auth = require('../middlewares/auth');
+const validateAge = require('../middlewares/validateAge');
+const validateName = require('../middlewares/validateName');
+const validateRate = require('../middlewares/validateRate');
+const validateTalk = require('../middlewares/validateTalk');
+const validateWatchedAt = require('../middlewares/validateWatchedAt');
+const generateId = require('../utils/generateId');
 
 const router = express.Router();
 
@@ -21,6 +28,25 @@ router.get('/:id', async (req, res) => {
   }
 
   res.status(404).json({ message: 'Pessoa palestrante não encontrada' });
+});
+
+router.post('/',
+  auth,
+  validateName, 
+  validateAge, 
+  validateTalk, 
+  validateWatchedAt,
+  validateRate,
+  async (req, res) => {
+    const newTalker = req.body;
+    const talkers = JSON.parse(await fs.readFile(pathToTalkersFile));
+    
+    const newId = await generateId();
+
+    talkers.push({ ...newTalker, id: newId });
+    await fs.writeFile(pathToTalkersFile, JSON.stringify(talkers));
+
+    res.status(201).json({ ...newTalker, id: newId });
 });
 
 module.exports = router;
