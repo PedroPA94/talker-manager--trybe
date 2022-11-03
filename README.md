@@ -18,7 +18,7 @@ This project was developed while studying Back-end web development [@betrybe](ht
 - Start the `talker_manager` container with the `docker-compose up -d` command
 - Access the container's terminal with `docker exec -it talker_manager bash`
 - In the terminal, install the dependencies with `npm install`
-- **All other node commands must be run inside the container*
+- **All other node commands must be run inside the container**
 
 </details>
 
